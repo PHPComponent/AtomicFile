@@ -1,0 +1,29 @@
+{
+  "name": "php-component/atomic-file",
+  "description": "Library for atomic operations with files",
+  "minimum-stability": "stable",
+  "license": "BSD-3-Clause",
+  "authors": [
+    {
+      "name": "František Šitner",
+      "email": "frantisek.sitner@gmail.com",
+      "role": "Developer"
+    }
+  ],
+  "require": {
+    "php": ">=5.5"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^5.7.5"
+  },
+  "autoload": {
+    "psr-4": {
+      "PHPComponent\\AtomicFile\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "PHPComponent\\DI\\Tests\\": "tests/"
+    }
+  }
+}
