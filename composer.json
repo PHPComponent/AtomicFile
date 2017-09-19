@@ -23,7 +23,7 @@
   },
   "autoload-dev": {
     "psr-4": {
-      "PHPComponent\\DI\\Tests\\": "tests/"
+      "PHPComponent\\AtomicFile\\Tests\\": "tests/"
     }
   }
 }

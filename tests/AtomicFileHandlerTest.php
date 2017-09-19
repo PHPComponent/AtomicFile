@@ -8,7 +8,7 @@
  * file that was distributed with this source code.
  */
 
-namespace PHPComponent\AtomicFile\Test;
+namespace PHPComponent\AtomicFile\Tests;
 
 use PHPComponent\AtomicFile\AtomicFileHandler;
 
