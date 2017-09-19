@@ -86,7 +86,7 @@ class AtomicFileWriter extends AtomicFileHandler implements IAtomicFileWriter
         if(!is_scalar($text)) throw new \InvalidArgumentException('Text must be scalar instead of '.gettype($text));
         $this->openFile();
         $write = fwrite($this->getFile(), $text);
-        if(!$write)
+        if($write === false)
         {
             throw FileOperationException::createForFailedToWriteToFile($this->getFilePath());
         }

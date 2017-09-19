@@ -43,6 +43,7 @@ class AtomicFileWriterTest extends \PHPUnit_Framework_TestCase
 
     public function testWriteToFile()
     {
+        $this->assertSame(0, $this->file_writer->writeToFile(''));
         $this->assertSame(5, $this->file_writer->writeToFile('Hello'));
         $this->assertSame('Hello', $this->file_writer->getReader()->readFile());
     }
