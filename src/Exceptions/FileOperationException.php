@@ -23,6 +23,7 @@ class FileOperationException extends AtomicFileException
     const OPERATION_SEEK_FILE = 5;
     const OPERATION_REWIND_FILE = 6;
     const OPERATION_TRUNCATE_FILE = 7;
+    const OPERATION_COPY_INTO_TEMP_FILE = 8;
 
     /**
      * @param string $file_path
@@ -49,6 +50,24 @@ class FileOperationException extends AtomicFileException
     public static function createForFailedToOpenFile($file_path)
     {
         return new self($file_path, 'Failed to open file', self::OPERATION_OPEN_FILE);
+    }
+
+    /**
+     * @param string $file_path
+     * @return FileOperationException
+     */
+    public static function createForFailedToOpenTempFile($file_path)
+    {
+        return new self($file_path, 'Failed to open temp file', self::OPERATION_OPEN_FILE);
+    }
+
+    /**
+     * @param string $file_path
+     * @return FileOperationException
+     */
+    public static function createForFailedToCopyIntoTempFile($file_path)
+    {
+        return new self($file_path, 'Failed to copy into temp file', self::OPERATION_COPY_INTO_TEMP_FILE);
     }
 
     /**

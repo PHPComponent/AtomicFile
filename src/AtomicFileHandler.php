@@ -127,7 +127,7 @@ abstract class AtomicFileHandler implements IAtomicFileHandler
     {
         if(!$this->isFileOpened()) return;
         $this->unlockFile();
-        $close = fclose($this->file);
+        $close = fclose($this->getFile());
         if(!$close)
         {
             throw FileOperationException::createForFailedToCloseFile($this->getFilePath());
@@ -156,7 +156,7 @@ abstract class AtomicFileHandler implements IAtomicFileHandler
     public function getFileSize()
     {
         $this->openFile();
-        $stats = fstat($this->file);
+        $stats = fstat($this->getFile());
         return $stats['size'];
     }
 
@@ -166,7 +166,7 @@ abstract class AtomicFileHandler implements IAtomicFileHandler
      */
     protected function isFileOpened()
     {
-        return is_resource($this->file);
+        return is_resource($this->getFile());
     }
 
     /**
@@ -179,7 +179,7 @@ abstract class AtomicFileHandler implements IAtomicFileHandler
     {
         for($i = 0; $i < $lock_retries; $i++)
         {
-            if(!flock($this->file, $lock_type | LOCK_NB))
+            if(!flock($this->getFile(), $lock_type | LOCK_NB))
             {
                 if($i === ($lock_retries - 1)) return false;
                 usleep($retry_interval);
@@ -198,7 +198,7 @@ abstract class AtomicFileHandler implements IAtomicFileHandler
      */
     protected function unlockFile()
     {
-        $unlock = flock($this->file, LOCK_UN);
+        $unlock = flock($this->getFile(), LOCK_UN);
         if(!$unlock)
         {
             throw FileLockException::createForFailedToUnlockFile($this->getFilePath());

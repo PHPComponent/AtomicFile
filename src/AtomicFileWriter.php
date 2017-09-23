@@ -29,6 +29,12 @@ class AtomicFileWriter extends AtomicFileHandler implements IAtomicFileWriter
     /** @var bool */
     private $write_only;
 
+    /** @var resource */
+    private $original_file;
+
+    /** @var string */
+    private $temp_file_path;
+
     /**
      * @param string $file_path
      * @param bool $create_non_existent
@@ -48,6 +54,7 @@ class AtomicFileWriter extends AtomicFileHandler implements IAtomicFileWriter
         $this->create_non_existent = $create_non_existent;
         $this->write_only = $write_only;
         parent::__construct($file_path, $lock_retries, $retry_interval);
+        $this->temp_file_path = $this->getFilePath().'-'.rand().'.tmp';
     }
 
     /**
@@ -70,8 +77,28 @@ class AtomicFileWriter extends AtomicFileHandler implements IAtomicFileWriter
         }
         if(!$this->tryLockFile(LOCK_EX, $this->getLockRetries(), $this->getRetryInterval()))
         {
+            $this->rollbackOpeningFile();
             throw FileLockException::createForFailedToLockFile($this->getFilePath());
         }
+
+        $temp_file = fopen($this->getTempFilePath(), $this->getOpenMode());
+        if(!is_resource($temp_file))
+        {
+            $this->rollbackOpeningFile($temp_file);
+            throw FileOperationException::createForFailedToOpenTempFile($this->getTempFilePath());
+        }
+
+        $copied_bytes = stream_copy_to_stream($this->getFile(), $temp_file);
+        if($copied_bytes !== $this->getFileSize())
+        {
+            $this->rollbackOpeningFile($temp_file);
+            throw FileOperationException::createForFailedToCopyIntoTempFile($this->getTempFilePath());
+        }
+
+        $this->original_file = $this->getFile();
+        //execute all functions on temp file
+        $this->setFile($temp_file);
+
         return $this;
     }
 
@@ -88,7 +115,7 @@ class AtomicFileWriter extends AtomicFileHandler implements IAtomicFileWriter
         $write = fwrite($this->getFile(), $text);
         if($write === false)
         {
-            throw FileOperationException::createForFailedToWriteToFile($this->getFilePath());
+            throw FileOperationException::createForFailedToWriteToFile($this->getTempFilePath());
         }
         return $write;
     }
@@ -104,7 +131,7 @@ class AtomicFileWriter extends AtomicFileHandler implements IAtomicFileWriter
         $truncate = ftruncate($this->getFile(), $truncate_size);
         if(!$truncate)
         {
-            throw FileOperationException::createForFailedToTruncateFile($this->getFilePath());
+            throw FileOperationException::createForFailedToTruncateFile($this->getTempFilePath());
         }
         return $this;
     }
@@ -129,6 +156,66 @@ class AtomicFileWriter extends AtomicFileHandler implements IAtomicFileWriter
     }
 
     /**
+     * @inheritdoc
+     */
+    public function closeFile()
+    {
+        if(!$this->isOriginalFileOpened() && !$this->isFileOpened()) return;
+        $this->unlockFile();
+        fclose($this->original_file);
+        fclose($this->getFile());
+        if(!rename($this->getTempFilePath(), $this->getFilePath()))
+        {
+            unlink($this->getTempFilePath());
+        }
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function unlockFile()
+    {
+        if(!$this->isOriginalFileOpened()) return;
+        $unlock = flock($this->original_file, LOCK_UN);
+        if(!$unlock)
+        {
+            throw FileLockException::createForFailedToUnlockFile($this->getFilePath());
+        }
+    }
+
+    /**
+     * Used only when failed to open temp file in OpenFile
+     * @param resource|null $temp_file
+     * @return void
+     */
+    private function rollbackOpeningFile($temp_file = null)
+    {
+        flock($this->getFile(), LOCK_UN);
+        fclose($this->getFile());
+        if(is_resource($temp_file))
+        {
+            fclose($temp_file);
+            unlink($this->getTempFilePath());
+        }
+    }
+
+    /**
+     * @return bool
+     */
+    private function isOriginalFileOpened()
+    {
+        return is_resource($this->original_file);
+    }
+
+    /**
+     * @return string
+     */
+    private function getTempFilePath()
+    {
+        return $this->temp_file_path;
+    }
+
+    /**
      * @return bool
      */
     protected function isCreateNonExistent()
@@ -145,10 +232,11 @@ class AtomicFileWriter extends AtomicFileHandler implements IAtomicFileWriter
     }
 
     /**
+     * Open it in reading mode for copying into temp file
      * @return string
      */
     protected function getOpenMode()
     {
-        return 'cb';
+        return 'c+b';
     }
 }

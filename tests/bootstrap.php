@@ -13,8 +13,14 @@ $dir_name = dirname(__FILE__);
 require_once $dir_name.'/../vendor/autoload.php';
 
 register_shutdown_function(
-    function() use($dir_name){
-        @unlink($dir_name.'/tmp/test.txt');
+    function() use($dir_name)
+    {
+        /** @var SplFileInfo[]|FilesystemIterator $files */
+        $files = new FilesystemIterator($dir_name.'/tmp');
+        foreach($files as $file)
+        {
+            @unlink($file->getPathname());
+        }
         @rmdir($dir_name.'/tmp');
     }
 );
