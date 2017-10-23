@@ -133,6 +133,7 @@ class AtomicFileWriter extends AtomicFileHandler implements IAtomicFileWriter
         {
             throw FileOperationException::createForFailedToTruncateFile($this->getTempFilePath());
         }
+        $this->rewindFile();
         return $this;
     }
 
